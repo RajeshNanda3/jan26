@@ -8,13 +8,16 @@ import crypto from "crypto";
 import sendMail from "../config/sendMail.js";
 // import { get } from "http";
 import { getOtpHtml, getVerifyEmailHtml } from "../config/html.js";
-import { generateAccessToken, generateToken, verifyRefreshToken, revokeRefreshToken } from "../config/generateToken.js";
-
-
+import {
+  generateAccessToken,
+  generateToken,
+  verifyRefreshToken,
+  revokeRefreshToken,
+} from "../config/generateToken.js";
 
 export const registerUser = trycatch(async (req, res) => {
   const sanitizedBody = sanitize(req.body);
-  console.log(sanitizedBody)
+  console.log(sanitizedBody);
 
   const validation = userRegistrationSchema.safeParse(sanitizedBody);
   // const { email, name, password, mobile } = req.body;
@@ -24,17 +27,17 @@ export const registerUser = trycatch(async (req, res) => {
     let firstErrorMessage = "Validation error";
     let allErrors = [];
     if (zodError?.issues && Array.isArray(zodError.issues)) {
-      allErrors = zodError.issues.map(issue => ({
-        field: issue.path?issue.path.join('.'):"unknown",
+      allErrors = zodError.issues.map((issue) => ({
+        field: issue.path ? issue.path.join(".") : "unknown",
         message: issue.message || "Validation error",
-        code : issue.code || "invalid"
+        code: issue.code || "invalid",
       }));
       firstErrorMessage = allErrors[0]?.message || "Validation error";
     }
 
-    return res.status(400).json({ 
-      message: firstErrorMessage, 
-      errors: allErrors 
+    return res.status(400).json({
+      message: firstErrorMessage,
+      errors: allErrors,
     });
   }
   const { email, name, password, mobile, role } = validation.data;
@@ -42,50 +45,56 @@ export const registerUser = trycatch(async (req, res) => {
   // implementing rate limiting using Redis can be done here
   const rateLimitKey = `register-rate-limit:${req.ip}:${email}`;
   if (await redisClient.get(rateLimitKey)) {
-    return res.status(429).json({ message: "Too many registration attempts. Please try again later." });
+    return res.status(429).json({
+      message: "Too many registration attempts. Please try again later.",
+    });
   }
-  console.log("passed rate limit")
-  
-// check if user already exists
+  console.log("passed rate limit");
+
+  // check if user already exists
   const existingUser = await prisma.user.findUnique({ where: { email } });
-  console.log("hii Rajesh")
-  console.log(existingUser)
+  console.log("hii Rajesh");
+  console.log(existingUser);
   if (existingUser) {
     return res.status(400).json({ message: "User already exists" });
-  } 
+  }
   // hash the password before storing
   const hashedPassword = await bcrypt.hash(password, 10);
 
-
-  const verifyToken = crypto.randomBytes(32).toString('hex');
+  const verifyToken = crypto.randomBytes(32).toString("hex");
 
   const verifyKey = `verify:${verifyToken}`;
 
-  const datatoStore = JSON.stringify({ email, name, password: hashedPassword, mobile, role });
+  const datatoStore = JSON.stringify({
+    email,
+    name,
+    password: hashedPassword,
+    mobile,
+    role,
+  });
 
-  await redisClient.set(verifyKey,datatoStore,{EX:300})
+  await redisClient.set(verifyKey, datatoStore, { EX: 300 });
 
   const subject = "Verify your email for Account creation";
   const html = getVerifyEmailHtml({ email, token: verifyToken });
 
-
- await sendMail({
+  await sendMail({
     email,
     subject,
-    html
- })
+    html,
+  });
 
   await redisClient.set(rateLimitKey, "true", { EX: 60 }); // 1 minute rate limit
 
   // const newUser = await prisma.user.create({
   //   data: { email, name, password, mobile },
   // });
-  res.status(201).json({ 
+  res.status(201).json({
     // message: "User registered successfully", user: newUser
-    message: "If your email is valid, a verification link has been sent to your email address. Please verify to complete registration. it will expire in 5 minutes."
-   });
+    message:
+      "If your email is valid, a verification link has been sent to your email address. Please verify to complete registration. it will expire in 5 minutes.",
+  });
 });
-
 
 export const verifyUser = trycatch(async (req, res) => {
   const { token } = req.params;
@@ -96,31 +105,42 @@ export const verifyUser = trycatch(async (req, res) => {
   const verifyKey = `verify:${token}`;
   const userDataJson = await redisClient.get(verifyKey);
   if (!userDataJson) {
-    return res.status(400).json({ message: "Verification Link is expired or invalid" });
+    return res
+      .status(400)
+      .json({ message: "Verification Link is expired or invalid" });
   }
 
   await redisClient.del(verifyKey); // Delete the token after use to prevent reuse
   const userData = JSON.parse(userDataJson);
-  const existingUser = await prisma.user.findUnique({ where: { email: userData.email } });
+  const existingUser = await prisma.user.findUnique({
+    where: { email: userData.email },
+  });
   if (existingUser) {
     return res.status(400).json({ message: "User already exists" });
   }
-  
+
   // const { email, name, password, mobile } = JSON.parse(userDataJson);
-  
+
   const newUser = await prisma.user.create({
-    data: { email: userData.email, name: userData.name, password: userData.password, mobile: userData.mobile, role: userData.role || 'USER' },
+    data: {
+      email: userData.email,
+      name: userData.name,
+      password: userData.password,
+      mobile: userData.mobile,
+      role: userData.role || "USER",
+    },
   });
   await redisClient.del(verifyKey);
-  res.status(201).json({ message: "User verified and registered successfully",
-     user: {_id: newUser.id, email: newUser.email, name: newUser.name, mobile: newUser.mobile} 
-    });
+  res.status(201).json({
+    message: "User verified and registered successfully",
+    user: {
+      _id: newUser.id,
+      email: newUser.email,
+      name: newUser.name,
+      mobile: newUser.mobile,
+    },
+  });
 });
-
-
-
-
-
 
 // export const loginUser = trycatch(async (req, res) => {
 //   const sanitizedBody = sanitize(req.body);
@@ -140,9 +160,9 @@ export const verifyUser = trycatch(async (req, res) => {
 //       firstErrorMessage = allErrors[0]?.message || "Validation error";
 //     }
 
-//     return res.status(400).json({ 
-//       message: firstErrorMessage, 
-//       errors: allErrors 
+//     return res.status(400).json({
+//       message: firstErrorMessage,
+//       errors: allErrors
 //     });
 //   }
 //   const { email, password } = validation.data;
@@ -213,8 +233,8 @@ export const verifyUser = trycatch(async (req, res) => {
 //   let user = await prisma.user.findUnique({ where: { email } });
 //   const tokenData = await generateToken(user.id, res);
 
-//   res.status(200).json({ 
-//     message: `Welcome back, ${user.name}`, 
+//   res.status(200).json({
+//     message: `Welcome back, ${user.name}`,
 //     user: {_id: user.id, email: user.email, name: user.name, mobile: user.mobile},
 //     token: tokenData.token
 //   });
@@ -247,7 +267,7 @@ export const loginUser = trycatch(async (req, res) => {
   const otpKey = `otp:${email}`;
 
   await redisClient.set(otpKey, otp, { EX: 300 }); // 5 minutes
-  console.log(otpKey,otp)
+  console.log(otpKey, otp);
 
   await sendMail({
     email,
@@ -266,28 +286,28 @@ export const loginUser = trycatch(async (req, res) => {
 
 export const verifyOtp = trycatch(async (req, res) => {
   const { email, otp } = req.body;
-console.log(otp,"hii1")
+  console.log(otp, "hii1");
   if (!email || !otp) {
     return res.status(400).json({ message: "Email and OTP required" });
   }
 
   const otpKey = `otp:${email}`;
   const storedOtpString = await redisClient.get(otpKey);
-  console.log(otpKey,"1","",storedOtpString)
+  console.log(otpKey, "1", "", storedOtpString);
 
   if (!storedOtpString) {
     return res.status(400).json({ message: "OTP expired or invalid" });
   }
 
-  const storedOtp = JSON.parse(storedOtpString)
-  console.log(storedOtp, typeof storedOtp)
-  console.log(otp, typeof otp)
-  const modifiedOtp = Number(otp)
+  const storedOtp = JSON.parse(storedOtpString);
+  console.log(storedOtp, typeof storedOtp);
+  console.log(otp, typeof otp);
+  const modifiedOtp = Number(otp);
   //  STRING vs STRING
   if (storedOtp !== modifiedOtp) {
     return res.status(400).json({ message: "Invalid OTP" });
   }
-  console.log("checked and proceed furthur")
+  console.log("checked and proceed furthur");
   await redisClient.del(otpKey);
 
   let user = await prisma.user.findUnique({ where: { email } });
@@ -295,10 +315,10 @@ console.log(otp,"hii1")
   if (!user) {
     return res.status(404).json({ message: "User not found" });
   }
-  console.log(user)
+  console.log(user);
   //  SAFE TOKEN GENERATION
-  const  tokenData  = await generateToken(user.id, res);
-  console.log(tokenData)
+  const tokenData = await generateToken(user.id, res);
+  console.log(tokenData);
 
   return res.status(200).json({
     message: `Welcome ${user.name}`,
@@ -309,39 +329,48 @@ console.log(otp,"hii1")
       email: user.email,
       mobile: user.mobile,
       role: user.role,
-      points:user.points
+      points: user.points,
     },
   });
 });
 
-
-
 export const myProfile = trycatch(async (req, res) => {
   const user = req.user;
-  console.log(user)
-  
-  res.json({ user });
+  // console.log(user);
+  const freshUser = await prisma.user.findUnique({
+    where: { id: user.id },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      mobile: true,
+      role: true,
+      points: true,
+      created_at: true,
+      updated_at: true,
+    },
+  });
 
-
-  
-})
+  res.json({ user: freshUser });
+});
 
 export const refreshToken = trycatch(async (req, res) => {
   const refreshToken = req.cookies.refreshToken;
-// console.log(refreshToken, "this is rfestkn")
+  // console.log(refreshToken, "this is rfestkn")
   if (!refreshToken) {
     return res.status(401).json({ message: " Valid refresh token required" });
   }
-const decode = await verifyRefreshToken(refreshToken);
-// console.log(decode, "this is decoded token")
-if (!decode) {
-  return res.status(401).json({ message: "Invalid or expired refresh token" });
-}
+  const decode = await verifyRefreshToken(refreshToken);
+  // console.log(decode, "this is decoded token")
+  if (!decode) {
+    return res
+      .status(401)
+      .json({ message: "Invalid or expired refresh token" });
+  }
 
-generateAccessToken(decode.id,res);
-res.status(200).json({ message: "Access token refreshed" });
+  generateAccessToken(decode.id, res);
+  res.status(200).json({ message: "Access token refreshed" });
 });
-
 
 export const logoutUser = trycatch(async (req, res) => {
   const userId = req.user.id;
@@ -355,32 +384,69 @@ export const logoutUser = trycatch(async (req, res) => {
   res.status(200).json({ message: "Logged out successfully3" });
 });
 
-
-
-
 export const getUserProfile = trycatch(async (req, res) => {
   const { userId } = req.params;
-  const user = await prisma.user.findUnique({ where: { id: parseInt(userId) } });
+  const user = await prisma.user.findUnique({
+    where: { id: parseInt(userId) },
+  });
   if (!user) {
     return res.status(404).json({ message: "User not found" });
   }
   res.status(200).json({ user });
 });
 
-
 export const refreshCSRF = trycatch(async (req, res) => {
   const userId = req.user.id;
 
-
   const newCSRFToken = await generateCSRFToken(userId, res);
   res.status(200).json({
-     message: "CSRF token refreshed",
-     csrfToken: newCSRFToken });
-})
+    message: "CSRF token refreshed",
+    csrfToken: newCSRFToken,
+  });
+});
 
-
-export const adminController = trycatch(async(req,res)=>{
+export const adminController = trycatch(async (req, res) => {
   res.json({
-    message: "hello Admin Rajesh"
-  })
-})
+    message: "hello Admin Rajesh",
+  });
+});
+
+export const getAllVendors = trycatch(async (req, res) => {
+  const vendors = await prisma.user.findMany({
+    where: { role: "VENDOR" },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      mobile: true,
+      points: true,
+      created_at: true,
+    },
+  });
+  res.status(200).json({
+    message: "Vendors fetched successfully",
+    vendors,
+  });
+});
+
+export const updateProfile = trycatch(async (req, res) => {
+  const userId = req.user.id;
+  const { name, mobile } = req.body;
+
+  if (!name || !mobile) {
+    return res.status(400).json({ message: "Name and mobile are required" });
+  }
+
+  const updatedUser = await prisma.user.update({
+    where: { id: userId },
+    data: {
+      name,
+      mobile,
+    },
+  });
+
+  res.status(200).json({
+    message: "Profile updated successfully",
+    user: updatedUser,
+  });
+});

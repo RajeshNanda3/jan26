@@ -12,10 +12,17 @@ import Loading from "./Loading";
 import NavBar from "./components/NavBar";
 import Contact from "./pages/Contact";
 import Footer from "./components/Footer";
+import CustomerHero from "./pages/CustomerHero";
+import VendorHero from "./pages/VendorHero";
+import RedeemPoint from "./pages/RedeemPoint";
+import CustomerNav from "./components/CustomerNav";
+import VendorNav from "./components/vendorNav";
+ import CustomerTransactions from "./pages/CustomerTransaction";
+import CustomerProfile from "./pages/CustomerProfile";
 
 
 const App = () => {
-  const { isAuth, loading } = AppData();
+  const { isAuth, loading, user } = AppData();
   console.log(isAuth)
   return (
     <>
@@ -25,6 +32,11 @@ const App = () => {
       ) : (
         <BrowserRouter>
         <NavBar/>
+         {/* {isAuth && user && user.role === "USER" ?( <CustomerNav />) : <VendorNav/>} */}
+         {isAuth && user && (
+            user.role === "USER" ? <CustomerNav /> : <VendorNav />
+          )}
+
           <Routes>
             
             <Route path="/" element={isAuth ? <Home /> : <Login />} />
@@ -40,6 +52,11 @@ const App = () => {
               element={isAuth ? <Home /> : <Verify />}
             />
             <Route path="/dashboard" element={isAuth ? <Dashboard /> : <Login />} />
+            <Route path="/customer-hero" element={<CustomerHero />} />
+            <Route path="/customer-transactions" element={isAuth ? <CustomerTransactions /> : <Login />} />
+            <Route path="/vendor-hero" element={<VendorHero />} />
+            <Route path="/profile" element={isAuth ? <CustomerProfile /> : <Login />} />
+            <Route path="/redeem" element={<RedeemPoint />} />
           </Routes>
           <Footer/>
           <ToastContainer />

@@ -3,23 +3,25 @@ import {
   purchasePointsHandler,
   issuePointsHandler,
   redeemPointsHandler,
-  transferPointsHandler
+  transferPointsHandler,
+  getCustomerTransactions,
 } from "../controllers/transactionController.js";
 import { isAuth, authorizedVendor } from "../middlewares/isAuth.js";
 
 const router = express.Router();
 
-
-
 //  Vendor purchases points
 router.post("/purchase", purchasePointsHandler);
 
 //  Vendor issues points to customer
-router.post("/issue",isAuth, authorizedVendor, issuePointsHandler);
+router.post("/issue", isAuth, authorizedVendor, issuePointsHandler);
 
 //  Customer redeems points at vendor
 
-router.post("/redeem",isAuth, redeemPointsHandler);
+router.post("/redeem", isAuth, redeemPointsHandler);
+
+//  Customer gets transactions
+router.get("/transactions", isAuth, getCustomerTransactions);
 
 //  Vendor to vendor transfer
 router.post("/transfer", transferPointsHandler);
