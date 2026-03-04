@@ -202,3 +202,54 @@ export const getCustomerTransactions = async (req, res) => {
     res.status(500).json({ error: e.message });
   }
 };
+
+export const getVendorTransactions = async (req, res) => {
+  try {
+    const vendorId = req.user.id;
+    const { type, startDate, endDate } = req.query;
+
+    // Build filter - only where vendor is the user_id (primary actor)
+    const where = {
+      user_id: vendorId,
+    };
+
+    if (type && type !== "ALL") {
+      where.type = type;
+    }
+
+    if (startDate || endDate) {
+      where.created_at = {};
+      if (startDate) {
+        where.created_at.gte = new Date(startDate);
+      }
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        where.created_at.lte = end;
+      }
+    }
+
+    const ledger = await prisma.transactionLedger.findMany({
+      where,
+      include: {
+        user: { select: { id: true, name: true, email: true, mobile: true } },
+        correspondent: {
+          select: { id: true, name: true, email: true, mobile: true },
+        },
+        point_issuance: true,
+        redemption: true,
+        referral_commission: true,
+        vendor_transfer: true,
+      },
+      orderBy: { created_at: "desc" },
+    });
+
+    res.status(200).json({
+      message: "Vendor transactions fetched successfully",
+      transactions: ledger,
+    });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: e.message });
+  }
+};

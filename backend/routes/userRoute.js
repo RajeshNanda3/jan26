@@ -10,6 +10,7 @@ import {
   refreshCSRF,
   adminController,
   getAllVendors,
+  getAllCustomers,
   updateProfile,
 } from "../controllers/userController.js";
 import { is } from "zod/v4/locales";
@@ -25,6 +26,7 @@ router.post("/verify-otp", verifyOtp);
 router.get("/me", isAuth, myProfile);
 router.put("/update-profile", isAuth, updateProfile);
 router.get("/vendors", getAllVendors);
+router.get("/customers", getAllCustomers);
 router.post("/refresh", refreshToken);
 router.post("/logout", isAuth, verifyCSRFToken, logoutUser);
 router.post("/refresh-csrf", isAuth, refreshCSRF);

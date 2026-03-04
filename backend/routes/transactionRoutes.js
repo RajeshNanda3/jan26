@@ -5,6 +5,7 @@ import {
   redeemPointsHandler,
   transferPointsHandler,
   getCustomerTransactions,
+  getVendorTransactions,
 } from "../controllers/transactionController.js";
 import { isAuth, authorizedVendor } from "../middlewares/isAuth.js";
 
@@ -22,6 +23,14 @@ router.post("/redeem", isAuth, redeemPointsHandler);
 
 //  Customer gets transactions
 router.get("/transactions", isAuth, getCustomerTransactions);
+
+//  Vendor gets transactions (only where vendor is primary actor)
+router.get(
+  "/vendor-transactions",
+  isAuth,
+  authorizedVendor,
+  getVendorTransactions,
+);
 
 //  Vendor to vendor transfer
 router.post("/transfer", transferPointsHandler);

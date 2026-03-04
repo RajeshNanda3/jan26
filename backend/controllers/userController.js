@@ -429,6 +429,24 @@ export const getAllVendors = trycatch(async (req, res) => {
   });
 });
 
+export const getAllCustomers = trycatch(async (req, res) => {
+  const customers = await prisma.user.findMany({
+    where: { role: "USER" },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      mobile: true,
+      points: true,
+      created_at: true,
+    },
+  });
+  res.status(200).json({
+    message: "Customers fetched successfully",
+    customers,
+  });
+});
+
 export const updateProfile = trycatch(async (req, res) => {
   const userId = req.user.id;
   const { name, mobile } = req.body;

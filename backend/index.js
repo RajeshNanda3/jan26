@@ -29,12 +29,12 @@ import transactinRoutes from './routes/transactionRoutes.js'
 import vendorRoutes from './routes/vendorRoutes.js'
 import adminRoutes from './routes/adminRoutes.js'
 
-
+console.log(process.env.FRONTEND_URL)
 // middleware
 app.use(express.json());
 app.use(cookieParser());
 app.use(cors({
-  origin: process.env.FRONTEND_URL ,
+  origin:[  'http://localhost:5174','http://localhost:5173' ] ,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
 }));
