@@ -253,3 +253,36 @@ export const getVendorTransactions = async (req, res) => {
     res.status(500).json({ error: e.message });
   }
 };
+
+export const getCustomerIssueHistory = async (req, res) => {
+  try {
+    const vendorId = req.user.id;
+    const { customerId } = req.params;
+
+    if (!customerId) {
+      return res.status(400).json({ error: "Customer ID is required" });
+    }
+
+    // Fetch all point issuances from this vendor to this customer
+    const history = await prisma.pointIssuance.findMany({
+      where: {
+        vendor_id: vendorId,
+        customer_id: customerId,
+      },
+      include: {
+        ledger: true,
+        vendor: { select: { id: true, name: true, mobile: true } },
+        customer: { select: { id: true, name: true, mobile: true } },
+      },
+      orderBy: { ledger: { created_at: "desc" } },
+    });
+
+    res.status(200).json({
+      message: "Customer issue history fetched successfully",
+      history,
+    });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: e.message });
+  }
+};

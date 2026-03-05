@@ -12,6 +12,8 @@ const IssuePoint = () => {
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
   const [customerError, setCustomerError] = useState("");
+  const [issueHistory, setIssueHistory] = useState([]);
+  const [fetchingHistory, setFetchingHistory] = useState(false);
 
   useEffect(() => {
     fetchCustomers();
@@ -30,11 +32,28 @@ const IssuePoint = () => {
     }
   };
 
+  const fetchCustomerIssueHistory = async (customerId) => {
+    try {
+      setFetchingHistory(true);
+      const { data } = await api.get(
+        `/api/v1/customer-issue-history/${customerId}`,
+      );
+      setIssueHistory(data.history || []);
+    } catch (err) {
+      console.error(err);
+      setIssueHistory([]);
+      toast.error("Failed to load customer history");
+    } finally {
+      setFetchingHistory(false);
+    }
+  };
+
   const resolveCustomer = () => {
     setCustomerError("");
     if (!customerIdentifier) {
       setCustomerError("Enter customer mobile or id");
       setSelectedCustomer(null);
+      setIssueHistory([]);
       return;
     }
     const found = customers.find(
@@ -43,8 +62,10 @@ const IssuePoint = () => {
     if (!found) {
       setCustomerError("Customer not found");
       setSelectedCustomer(null);
+      setIssueHistory([]);
     } else {
       setSelectedCustomer(found);
+      fetchCustomerIssueHistory(found.id);
     }
   };
 
@@ -74,6 +95,9 @@ const IssuePoint = () => {
         console.warn("Failed to refresh user after issue", e);
       }
 
+      // refresh customer history
+      await fetchCustomerIssueHistory(selectedCustomer.id);
+
       setPoints("");
       setSelectedCustomer(null);
       setCustomerIdentifier("");
@@ -92,7 +116,7 @@ const IssuePoint = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">
-      <div className="max-w-3xl mx-auto">
+      <div className="max-w-4xl mx-auto">
         <h1 className="text-2xl font-bold text-gray-800 mb-2">Issue Points</h1>
         <p className="text-gray-600 mb-6">
           Assign points to a customer by ID or phone.
@@ -107,7 +131,7 @@ const IssuePoint = () => {
 
         <form
           onSubmit={handleSubmit}
-          className="bg-white rounded-lg shadow p-6"
+          className="bg-white rounded-lg shadow p-6 mb-6"
         >
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -121,6 +145,7 @@ const IssuePoint = () => {
                   setCustomerIdentifier(e.target.value);
                   setSelectedCustomer(null);
                   setCustomerError("");
+                  setIssueHistory([]);
                 }}
                 placeholder="Enter customer id or mobile"
                 className="flex-1 px-3 py-2 border border-gray-300 rounded"
@@ -172,6 +197,7 @@ const IssuePoint = () => {
                 setSelectedCustomer(null);
                 setCustomerIdentifier("");
                 setCustomerError("");
+                setIssueHistory([]);
               }}
               className="bg-gray-200 px-4 py-2 rounded hover:bg-gray-300 transition"
             >
@@ -179,9 +205,97 @@ const IssuePoint = () => {
             </button>
           </div>
         </form>
+
+        {/* Customer Issue History */}
+        {selectedCustomer && (
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-xl font-bold text-gray-800 mb-4">
+              Issue History with {selectedCustomer.name}
+            </h2>
+
+            {fetchingHistory ? (
+              <p className="text-gray-600 text-center py-4">
+                Loading history...
+              </p>
+            ) : issueHistory.length === 0 ? (
+              <p className="text-gray-600 text-center py-4">
+                No issues history with this customer yet.
+              </p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-100 border-b">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">
+                        Date
+                      </th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">
+                        Points Issued
+                      </th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">
+                        Customer
+                      </th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">
+                        Status
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {issueHistory.map((issue, index) => (
+                      <tr
+                        key={issue.issuance_id}
+                        className="border-b hover:bg-gray-50"
+                      >
+                        <td className="px-4 py-3 text-sm text-gray-700">
+                          {new Date(issue.ledger.created_at).toLocaleDateString(
+                            "en-IN",
+                            {
+                              year: "numeric",
+                              month: "short",
+                              day: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            },
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-sm font-semibold text-green-600">
+                          +{issue.points_issued}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-700">
+                          {issue.customer.name}
+                        </td>
+                        <td className="px-4 py-3 text-sm">
+                          <span className="inline-block bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-medium">
+                            Completed
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
 };
 
 export default IssuePoint;
+//     </button>
+//     <button
+//       type="button"
+//       onClick={() => {
+//         setPoints("");
+//         setSelectedCustomer(null);
+//         setCustomerIdentifier("");
+//         setCustomerError("");
+//         setIssueHistory([]);
+//       }}
+//       className="bg-gray-200 px-4 py-2 rounded hover:bg-gray-300 transition"
+//     >
+//       Reset
+//     </button>
+//   </div>
+// </form>

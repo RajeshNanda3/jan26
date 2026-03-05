@@ -6,6 +6,10 @@ import { redisClient } from "../index.js";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
 import sendMail from "../config/sendMail.js";
+// import cloudinary from "../middlewares/cloudinary.js";
+// import {uploadOnCloudinary} from "../services/cloudinay.js";
+import cloudinary from "../services/cloudinaryService.js";
+import fs from "fs";
 // import { get } from "http";
 import { getOtpHtml, getVerifyEmailHtml } from "../config/html.js";
 import {
@@ -353,6 +357,133 @@ export const myProfile = trycatch(async (req, res) => {
 
   res.json({ user: freshUser });
 });
+
+// fetch extended profile for current user
+export const getProfile = trycatch(async (req, res) => {
+  const userId = req.user.id;
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      mobile: true,
+      role: true,
+      points: true,
+      created_at: true,
+      updated_at: true,
+    },
+  });
+  if (!user) return res.status(404).json({ message: "User not found" });
+
+  const profile = await prisma.userProfile.findUnique({
+    where: { user_id: userId },
+  });
+
+  res.status(200).json({ message: "Profile fetched", user, profile: profile || null });
+});
+
+// create or update current user's profile, handle avatar via memory multer + cloudinary
+// export const upsertProfile = trycatch(async (req, res) => {
+//   const userId = req.user.id;
+//   console.log(userId)
+//   const { age, address_at, address_po, address_market, address_dist, address_pin } = req.body || {};
+//   const data = {
+//     age: age ? parseInt(age, 10) : null,
+//     address_at: address_at || null,
+//     address_po: address_po || null,
+//     address_market: address_market || null,
+//     address_dist: address_dist || null,
+//     address_pin: address_pin || null,
+//   };
+
+//   if (req.file && req.file.buffer) {
+//     try {
+//       const { uploadToCloudinary } = await import("../middlewares/cloudinary.js");
+//       const result = await uploadToCloudinary(req.file.buffer, {
+//         folder: "user_profiles",
+//         resource_type: "image",
+//         public_id: `user_${userId}_${Date.now()}`,
+//         overwrite: true,
+//       });
+//       data.avatar = result.secure_url;
+//     } catch (err) {
+//       console.error("Cloudinary upload failed", err);
+//     }
+//   }
+
+//   const profile = await prisma.userProfile.upsert({
+//     where: { user_id: userId },
+//     update: data,
+//     create: { user_id: userId, ...data },
+//   });
+
+//   res.status(200).json({ message: "Profile saved", profile });
+// });
+
+export const upsertProfile = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const {
+      age,
+      address_at,
+      address_po,
+      address_market,
+      address_dist,
+      address_pin,
+    } = req.body || {};
+
+    // Prepare data object
+    const data = {
+      age: age ? parseInt(age, 10) : null,
+      address_at: address_at || null,
+      address_po: address_po || null,
+      address_market: address_market || null,
+      address_dist: address_dist || null,
+      address_pin: address_pin || null,
+    };
+
+    // If image uploaded
+    if (req.file) {
+      const filePath = req.file.path;
+
+      // Upload to Cloudinary
+      const result = await cloudinary.uploader.upload(filePath, {
+        folder: "user_profiles",
+        public_id: `user_${userId}_${Date.now()}`,
+        overwrite: true,
+      });
+
+      // Save image URL
+      data.avatar = result.secure_url;
+
+      // Delete temp file
+      fs.unlinkSync(filePath);
+    }
+
+    // Upsert profile
+    const profile = await prisma.userProfile.upsert({
+      where: { user_id: userId },
+      update: data,
+      create: {
+        user_id: userId,
+        ...data,
+      },
+    });
+
+    res.status(200).json({
+      message: "Profile saved successfully",
+      profile,
+    });
+  } catch (error) {
+    console.error("Profile error:", error);
+    res.status(500).json({
+      message: "Server error",
+    });
+  }
+};
 
 export const refreshToken = trycatch(async (req, res) => {
   const refreshToken = req.cookies.refreshToken;

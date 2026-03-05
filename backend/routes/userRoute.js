@@ -1,10 +1,17 @@
 import express from "express";
+import { upload } from "../middlewares/multer.js";
+import  uploadOnCloudinary  from "../middlewares/cloudinary.js";
+import fs from "fs";
+
+
 import {
   registerUser,
   verifyUser,
   loginUser,
   verifyOtp,
   myProfile,
+  getProfile,
+  upsertProfile,
   refreshToken,
   logoutUser,
   refreshCSRF,
@@ -25,6 +32,11 @@ router.post("/login", loginUser);
 router.post("/verify-otp", verifyOtp);
 router.get("/me", isAuth, myProfile);
 router.put("/update-profile", isAuth, updateProfile);
+
+// profile detail endpoints
+router.get("/profile", isAuth, getProfile);
+router.post("/profile", isAuth, upload.single("avatar"),  upsertProfile);
+
 router.get("/vendors", getAllVendors);
 router.get("/customers", getAllCustomers);
 router.post("/refresh", refreshToken);

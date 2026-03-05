@@ -6,6 +6,7 @@ import {
   transferPointsHandler,
   getCustomerTransactions,
   getVendorTransactions,
+  getCustomerIssueHistory,
 } from "../controllers/transactionController.js";
 import { isAuth, authorizedVendor } from "../middlewares/isAuth.js";
 
@@ -30,6 +31,14 @@ router.get(
   isAuth,
   authorizedVendor,
   getVendorTransactions,
+);
+
+//  Vendor gets issue history with a specific customer
+router.get(
+  "/customer-issue-history/:customerId",
+  isAuth,
+  authorizedVendor,
+  getCustomerIssueHistory,
 );
 
 //  Vendor to vendor transfer

@@ -82,11 +82,11 @@ model UserProfile {
   avatar     String?   // url/path to avatar
 
   // explicit address fields
-  address_at     String? // "at"
-  address_po     String? // "po"
-  address_market String? // "market"
-  address_dist   String? // "dist"
-  address_pin    String? // "pin"
+  address_at     String?
+  address_po     String? 
+  address_market String? 
+  address_dist   String? 
+  address_pin    String? 
 
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
@@ -101,6 +101,7 @@ model VendorProfile {
   category          String?
   market_name       String?
   deals_with        String[] @default([]) // array of categories/vendors they deal with
+  redeem_option     RedeemOption @default(PENDING)
 
   // explicit address fields
   address_at     String?
@@ -109,7 +110,7 @@ model VendorProfile {
   address_dist   String?
   address_pin    String?
 
-  avatar      String? // vendor logo/image
+  avatar      String? 
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
 
@@ -243,4 +244,9 @@ enum RequestStatus {
   PENDING
   APPROVED
   REJECTED
+}
+
+enum RedeemOption {
+  PENDING
+  APPROVED
 }

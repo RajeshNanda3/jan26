@@ -6,7 +6,7 @@ import { stringify } from "querystring";
 export const isAuth = async (req, res, next) => {
   try {
     const token = req.cookies.accessToken;
-    // console.log(token, "latest");
+    console.log(token, "latest");
     if (!token) {
       return res
         .status(403)
