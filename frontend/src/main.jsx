@@ -6,7 +6,7 @@ import { AppProvider } from './context/AppContext.jsx'
 
 
 
-export const server = 'http://localhost:8000'
+export const server = import.meta.env.VITE_BACKEND_URL 
 
 createRoot(document.getElementById('root')).render(
   // <StrictMode>
