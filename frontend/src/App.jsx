@@ -16,7 +16,7 @@ import CustomerHero from "./pages/CustomerHero";
 import VendorHero from "./pages/VendorHero";
 import RedeemPoint from "./pages/RedeemPoint";
 import CustomerNav from "./components/CustomerNav";
-import VendorNav from "./components/vendorNav";
+import VendorNav from "./components/VendorNav";
  import CustomerTransactions from "./pages/CustomerTransaction";
 import CustomerProfile from "./pages/CustomerProfile";
 import IssuePoint from "./pages/IssuePoint";

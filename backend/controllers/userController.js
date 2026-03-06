@@ -44,7 +44,7 @@ export const registerUser = trycatch(async (req, res) => {
       errors: allErrors,
     });
   }
-  const { email, name, password, mobile, role } = validation.data;
+  const { email, name, password, mobile, role, referred_by } = validation.data;
 
   // implementing rate limiting using Redis can be done here
   const rateLimitKey = `register-rate-limit:${req.ip}:${email}`;
@@ -53,7 +53,7 @@ export const registerUser = trycatch(async (req, res) => {
       message: "Too many registration attempts. Please try again later.",
     });
   }
-  console.log("passed rate limit");
+  console.log("passed rate limit2");
 
   // check if user already exists
   const existingUser = await prisma.user.findUnique({ where: { email } });
@@ -75,6 +75,7 @@ export const registerUser = trycatch(async (req, res) => {
     password: hashedPassword,
     mobile,
     role,
+    referred_by: referred_by || null,
   });
 
   await redisClient.set(verifyKey, datatoStore, { EX: 300 });
@@ -132,6 +133,7 @@ export const verifyUser = trycatch(async (req, res) => {
       password: userData.password,
       mobile: userData.mobile,
       role: userData.role || "USER",
+      refferred_by: userData.referred_by || null,
     },
   });
   await redisClient.del(verifyKey);
@@ -381,7 +383,9 @@ export const getProfile = trycatch(async (req, res) => {
     where: { user_id: userId },
   });
 
-  res.status(200).json({ message: "Profile fetched", user, profile: profile || null });
+  res
+    .status(200)
+    .json({ message: "Profile fetched", user, profile: profile || null });
 });
 
 // create or update current user's profile, handle avatar via memory multer + cloudinary
@@ -597,5 +601,33 @@ export const updateProfile = trycatch(async (req, res) => {
   res.status(200).json({
     message: "Profile updated successfully",
     user: updatedUser,
+  });
+});
+
+export const checkReferrer = trycatch(async (req, res) => {
+  const { mobile } = req.body;
+
+  if (!mobile) {
+    return res.status(400).json({ message: "Mobile number is required" });
+  }
+
+  const referrer = await prisma.user.findUnique({
+    where: { mobile: mobile.toString() },
+    select: {
+      id: true,
+      name: true,
+      mobile: true,
+    },
+  });
+
+  if (!referrer) {
+    return res.status(404).json({ message: "Referrer not found" });
+  }
+
+  res.status(200).json({
+    message: "Referrer found",
+    userId: referrer.id,
+    name: referrer.name,
+    mobile: referrer.mobile,
   });
 });

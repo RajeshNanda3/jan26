@@ -1,8 +1,7 @@
 import express from "express";
 import { upload } from "../middlewares/multer.js";
-import  uploadOnCloudinary  from "../middlewares/cloudinary.js";
+import uploadOnCloudinary from "../middlewares/cloudinary.js";
 import fs from "fs";
-
 
 import {
   registerUser,
@@ -19,6 +18,7 @@ import {
   getAllVendors,
   getAllCustomers,
   updateProfile,
+  checkReferrer,
 } from "../controllers/userController.js";
 import { is } from "zod/v4/locales";
 import { authorizedAdmin, isAuth } from "../middlewares/isAuth.js";
@@ -27,6 +27,7 @@ import { verifyCSRFToken } from "../config/csrfMiddleware.js";
 const router = express.Router();
 // Sample route for user registration
 router.post("/register", registerUser);
+router.post("/check-referrer", checkReferrer);
 router.post("/verify/:token", verifyUser);
 router.post("/login", loginUser);
 router.post("/verify-otp", verifyOtp);
@@ -35,7 +36,7 @@ router.put("/update-profile", isAuth, updateProfile);
 
 // profile detail endpoints
 router.get("/profile", isAuth, getProfile);
-router.post("/profile", isAuth, upload.single("avatar"),  upsertProfile);
+router.post("/profile", isAuth, upload.single("avatar"), upsertProfile);
 
 router.get("/vendors", getAllVendors);
 router.get("/customers", getAllCustomers);

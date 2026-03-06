@@ -152,6 +152,7 @@ export const transferPointsHandler = async (req, res) => {
     res.status(500).json({ error: e.message });
   }
 };
+
 export const getCustomerTransactions = async (req, res) => {
   try {
     const userId = req.user.id;

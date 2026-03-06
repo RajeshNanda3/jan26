@@ -10,8 +10,48 @@ const Register = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("USER");
+  const [referrerMobile, setReferrerMobile] = useState("");
+  const [referredBy, setReferredBy] = useState(null);
+  const [referrerError, setReferrerError] = useState("");
   const [btnLoading, setBtnLoading] = useState(false);
   const navigate = useNavigate();
+
+  const checkReferrer = async (mobile) => {
+    if (!mobile) {
+      setReferrerError("");
+      setReferredBy(null);
+      return;
+    }
+
+    try {
+      const { data } = await axios.post(
+        `${server}/api/v1/users/check-referrer`,
+        {
+          mobile: mobile,
+        },
+      );
+
+      if (data.userId) {
+        setReferredBy(data.userId);
+        setReferrerError("");
+        toast.success("Referrer found!");
+      } else {
+        setReferrerError("Referrer not found");
+        setReferredBy(null);
+      }
+    } catch (error) {
+      setReferrerError(
+        error.response?.data?.message || "Error checking referrer",
+      );
+      setReferredBy(null);
+    }
+  };
+
+  const handleReferrerChange = async (e) => {
+    const mobile = e.target.value;
+    setReferrerMobile(mobile);
+    await checkReferrer(mobile);
+  };
 
   const submitHandler = async (e) => {
     setBtnLoading(true);
@@ -23,12 +63,17 @@ const Register = () => {
         email,
         password,
         role,
+        referred_by: referredBy,
       });
       toast.success(data.message);
       setName("");
-      (setMobile(""), setEmail(""));
+      setMobile("");
+      setEmail("");
       setPassword("");
       setRole("USER");
+      setReferrerMobile("");
+      setReferredBy(null);
+      setReferrerError("");
       // localStorage.setItem('email', email)
       // navigate('/verify')
     } catch (error) {
@@ -109,6 +154,29 @@ const Register = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
+          </div>
+          <div className="relative mb-4">
+            <label
+              htmlFor="referrerMobile"
+              className="leading-7 text-sm text-gray-600"
+            >
+              Referrer Mobile (Optional)
+            </label>
+            <input
+              type="number"
+              id="referrerMobile"
+              name="referrerMobile"
+              className="w-full bg-white rounded border border-gray-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 text-base outline-none text-gray-700 py-1 px-3 leading-8 transition-colors duration-200 ease-in-out"
+              value={referrerMobile}
+              onChange={handleReferrerChange}
+              placeholder="Enter referrer's mobile number"
+            />
+            {referrerError && (
+              <p className="text-red-500 text-xs mt-1">{referrerError}</p>
+            )}
+            {referredBy && (
+              <p className="text-green-500 text-xs mt-1">✓ Referrer verified</p>
+            )}
           </div>
           <div className="relative mb-4">
             <label
