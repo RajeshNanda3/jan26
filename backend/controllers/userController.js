@@ -83,11 +83,15 @@ export const registerUser = trycatch(async (req, res) => {
   const subject = "Verify your email for Account creation";
   const html = getVerifyEmailHtml({ email, token: verifyToken });
 
-  await sendMail({
+  try {
+    await sendMail({
     email,
     subject,
     html,
   });
+  } catch (error) {
+    console.error("Error sending verification email:", error);
+  }
 
   await redisClient.set(rateLimitKey, "true", { EX: 60 }); // 1 minute rate limit
 
