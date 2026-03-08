@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const server = "http://localhost:8000";
+const server = import.meta.env.VITE_BACKEND_URL;
 
 // for csrf token extraction from cookies
 const getCookie = (name) => {
