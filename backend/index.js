@@ -6,56 +6,72 @@ import cors from "cors";
 
 dotenv.config();
 
+const app = express();
+
+/* ---------------- REDIS ---------------- */
+
 const redisUrl = process.env.REDIS_URL || "redis://localhost:6379";
-if (!redisUrl) {
-  throw new Error("REDIS_URL is not defined in environment variables");
-  process.exit(1);
-}
+
 export const redisClient = createClient({
   url: redisUrl,
 });
 
 redisClient
   .connect()
-  .then(() => console.log("Connected to Redis"))
-  .catch((err) => console.error("Failed to connect to Redis", err));
+  .then(() => console.log("✅ Connected to Redis"))
+  .catch((err) => console.error("❌ Failed to connect to Redis", err));
 
-const app = express();
+/* ---------------- TRUST PROXY (for deployment) ---------------- */
 
 if (process.env.NODE_ENV === "production") {
   app.set("trust proxy", 1);
 }
 
-// importing routes
+/* ---------------- CORS CONFIG ---------------- */
+
+const allowedOrigins = process.env.FRONTEND_URL
+  ? process.env.FRONTEND_URL.split(",")
+  : ["http://localhost:5173", "http://localhost:5174"];
+
+console.log("Allowed Origins:", allowedOrigins);
+
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+  })
+);
+
+/* ---------------- MIDDLEWARE ---------------- */
+
+app.use(express.json());
+app.use(cookieParser());
+
+/* ---------------- ROUTES ---------------- */
+
 import userRoute from "./routes/userRoute.js";
 import transactinRoutes from "./routes/transactionRoutes.js";
 import vendorRoutes from "./routes/vendorRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
 
-console.log(process.env.FRONTEND_URL);
-// middleware
-app.use(express.json());
-app.use(cookieParser());
-app.use(
-  cors({
-    origin:[ process.env.FRONTEND_URL || "http://localhost:5173" || "http://localhost:5174"],
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-  }),
-);
-// using routes
 app.use("/api/v1/users", userRoute);
 app.use("/api/v1", transactinRoutes);
 app.use("/api/v1/vendor", vendorRoutes);
 app.use("/api/v1/admin", adminRoutes);
 
-const PORT = process.env.PORT || 5000;
+/* ---------------- TEST ROUTE ---------------- */
 
 app.get("/", (req, res) => {
-  res.send("Hello, World!");
+  res.send("API is running 🚀");
 });
 
-// app.listen(PORT, () => {
-//   console.log(`Server is running on http://localhost:${PORT}`);
-// });
+/* ---------------- EXPORT FOR VERCEL ---------------- */
+
 export default app;
