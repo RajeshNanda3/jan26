@@ -19,7 +19,7 @@ export const redisClient = createClient({
 redisClient
   .connect()
   .then(() => console.log("✅ Connected to Redis"))
-  .catch((err) => console.error("❌ Failed to connect to Redis", err));
+  .catch((err) => console.error(" Failed to connect to Redis", err));
 
 /* ---------------- TRUST PROXY (for deployment) ---------------- */
 
@@ -69,8 +69,13 @@ app.use("/api/v1/admin", adminRoutes);
 /* ---------------- TEST ROUTE ---------------- */
 
 app.get("/", (req, res) => {
-  res.send("API is running 🚀");
+  res.send("API is running ");
+
 });
+
+// app.listen(process.env.PORT || 8000, () => {
+//   console.log(`Server is running on port ${process.env.PORT || 8000}`);
+// });
 
 /* ---------------- EXPORT FOR VERCEL ---------------- */
 
