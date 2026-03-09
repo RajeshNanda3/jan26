@@ -31,7 +31,7 @@ if (process.env.NODE_ENV === "production") {
 
 const allowedOrigins = process.env.FRONTEND_URL
   ? process.env.FRONTEND_URL.split(",")
-  : ["http://localhost:5173", "http://localhost:5174"];
+  : ["https://jan26-admin.vercel.app", "http://localhost:5173", "http://localhost:5174"];
 
 console.log("Allowed Origins:", allowedOrigins);
 
