@@ -33,7 +33,9 @@ const App = () => {
       {loading ? (
         <Loading />
       ) : (
-        <BrowserRouter>
+        <>
+          {/* <BrowserRouter> */}
+
           <NavBar />
           {/* {isAuth && user && user.role === "USER" ?( <CustomerNav />) : <VendorNav/>} */}
           {isAuth &&
@@ -41,7 +43,7 @@ const App = () => {
             (user.role === "USER" ? <CustomerNav /> : <VendorNav />)}
 
           <Routes>
-            <Route path="/" element={isAuth ? <Home /> : <Login />} />
+            <Route path="/" element={<Home />} />
             <Route path="/contact" element=<Contact /> />
             <Route path="/login" element={isAuth ? <Home /> : <Login />} />
             <Route path="/register" element={<Register />} />
@@ -91,7 +93,8 @@ const App = () => {
           </Routes>
           <Footer />
           <ToastContainer />
-        </BrowserRouter>
+          {/* </BrowserRouter> */}
+        </>
       )}
     </>
   );

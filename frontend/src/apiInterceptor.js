@@ -28,12 +28,14 @@ api.interceptors.request.use(
     return Promise.reject(error)
   });
 
+
+
 let isRefreshing = false;
 let isRefreshingCSRFToken = false;
 let failedQueue = [];
 let csrfFailedQueue = [];
 
-const processQueue = ()=>{
+const processQueue = (error, token = null)=>{
   failedQueue.forEach((prom)=>{
     if (error) {
      prom.reject(error) 
@@ -92,7 +94,7 @@ api.interceptors.response.use(
       
       if (isRefreshing){
         return new Promise((resolve,reject) => {
-          failedQueue.push({resolve,reject})
+          failedQueue.push({resolve, reject})
         }).then(()=>{
           return api(originalRequest);
         })
