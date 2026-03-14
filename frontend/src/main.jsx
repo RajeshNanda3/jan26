@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.jsx'
 import { AppProvider } from './context/AppContext.jsx'
+import { BrowserRouter } from "react-router-dom";
 
 
 
@@ -10,9 +11,11 @@ export const server = import.meta.env.VITE_BACKEND_URL
 
 createRoot(document.getElementById('root')).render(
   // <StrictMode>
+  <BrowserRouter>
   <AppProvider>
     <App />
   </AppProvider>
+   </BrowserRouter> 
     
   // </StrictMode>,
 )

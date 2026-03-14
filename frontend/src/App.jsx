@@ -17,36 +17,37 @@ import VendorHero from "./pages/VendorHero";
 import RedeemPoint from "./pages/RedeemPoint";
 import CustomerNav from "./components/CustomerNav";
 import VendorNav from "./components/VendorNav";
- import CustomerTransactions from "./pages/CustomerTransaction";
+import CustomerTransactions from "./pages/CustomerTransaction";
 import CustomerProfile from "./pages/CustomerProfile";
 import IssuePoint from "./pages/IssuePoint";
 import VendorTransactions from "./pages/VendorTransactions";
 import VendorProfile from "./pages/VendorProfile";
 import VendorPurchase from "./pages/VendorPurchase";
-
+import ForgotPassword from "./pages/ForgotPassword";
 
 const App = () => {
   const { isAuth, loading, user } = AppData();
-  console.log(isAuth)
+  console.log(isAuth);
   return (
     <>
-    
       {loading ? (
         <Loading />
       ) : (
-        <BrowserRouter>
-        <NavBar/>
-         {/* {isAuth && user && user.role === "USER" ?( <CustomerNav />) : <VendorNav/>} */}
-         {isAuth && user && (
-            user.role === "USER" ? <CustomerNav /> : <VendorNav />
-          )}
+        <>
+          {/* <BrowserRouter> */}
+
+          <NavBar />
+          {/* {isAuth && user && user.role === "USER" ?( <CustomerNav />) : <VendorNav/>} */}
+          {isAuth &&
+            user &&
+            (user.role === "USER" ? <CustomerNav /> : <VendorNav />)}
 
           <Routes>
-            
-            <Route path="/" element={isAuth ? <Home /> : <Login />} />
-            <Route path="/contact" element= <Contact/>/>
+            <Route path="/" element={<Home />} />
+            <Route path="/contact" element=<Contact /> />
             <Route path="/login" element={isAuth ? <Home /> : <Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route
               path="/verify-otp"
               element={isAuth ? <Home /> : <VerifyOtp />}
@@ -55,20 +56,45 @@ const App = () => {
               path="/token/:token"
               element={isAuth ? <Home /> : <Verify />}
             />
-            <Route path="/dashboard" element={isAuth ? <Dashboard /> : <Login />} />
+            <Route
+              path="/dashboard"
+              element={isAuth ? <Dashboard /> : <Login />}
+            />
             <Route path="/customer-hero" element={<CustomerHero />} />
-            <Route path="/customer-transactions" element={isAuth ? <CustomerTransactions /> : <Login />} />
+            <Route
+              path="/customer-transactions"
+              element={isAuth ? <CustomerTransactions /> : <Login />}
+            />
             <Route path="/vendor-hero" element={<VendorHero />} />
-            <Route path="/issue" element={isAuth ? <IssuePoint /> : <Login />} />
-            <Route path="/purchase" element={isAuth ? <VendorPurchase /> : <Login />} />
-             <Route path="/vendor-transactions" element={isAuth ? <VendorTransactions /> : <Login />} />
-             <Route path="/vendor-profile" element={isAuth ? <VendorProfile /> : <Login />} />
-            <Route path="/profile" element={isAuth ? <CustomerProfile /> : <Login />} />
-            <Route path="/redeem" element={isAuth ? <RedeemPoint /> : <Login />} />
+            <Route
+              path="/issue"
+              element={isAuth ? <IssuePoint /> : <Login />}
+            />
+            <Route
+              path="/purchase"
+              element={isAuth ? <VendorPurchase /> : <Login />}
+            />
+            <Route
+              path="/vendor-transactions"
+              element={isAuth ? <VendorTransactions /> : <Login />}
+            />
+            <Route
+              path="/vendor-profile"
+              element={isAuth ? <VendorProfile /> : <Login />}
+            />
+            <Route
+              path="/profile"
+              element={isAuth ? <CustomerProfile /> : <Login />}
+            />
+            <Route
+              path="/redeem"
+              element={isAuth ? <RedeemPoint /> : <Login />}
+            />
           </Routes>
-          <Footer/>
+          <Footer />
           <ToastContainer />
-        </BrowserRouter>
+          {/* </BrowserRouter> */}
+        </>
       )}
     </>
   );
