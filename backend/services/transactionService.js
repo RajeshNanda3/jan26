@@ -51,7 +51,7 @@ export const purchasePoints = async (vendorId, points) => {
 //  Vendor Issues Points → customer (credit) & vendor (debit)
 export const issuePoints = async (vendorId, customerIdToUse, points, referrerId) => {
   let customerId = customerIdToUse;
-  console.log(customerId)
+  console.log(customerId, vendorId, points, referrerId)
   return prisma.$transaction(async (tx) => {
 
     //  10% referral commission
