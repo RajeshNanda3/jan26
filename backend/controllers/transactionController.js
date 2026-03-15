@@ -55,7 +55,7 @@ export const issuePointsHandler = async (req, res) => {
     }
 
     const referrerId =
-      customer.refferred_by || "19b633ec-ccc8-4e70-a13f-cae334d41443";
+      customer.refferred_by || "b2bf009b-4e58-4811-a415-9b84b8d6fd75";
 
     //  Check referrer exists (if provided)
     // let referrer = null;

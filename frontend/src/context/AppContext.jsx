@@ -1,5 +1,6 @@
 import { createContext, useEffect, useState, useContext } from "react";
 import { toast } from 'react-toastify'
+import { useNavigate } from "react-router-dom";
 
 // import axios from "axios";
 import { server } from "../main";
@@ -12,7 +13,7 @@ export const AppProvider= ({children})=>{
 const [user, setUser] = useState(null);
 const [loading,setLoading]= useState(true);
 const [isAuth, setIsAuth]= useState(false);
-
+const navigate = useNavigate();
 
 async function fetchUser() {
   try {
@@ -28,7 +29,7 @@ async function fetchUser() {
   }
 }
 
-async function logoutUser(navigate)  {
+async function logoutUser(e)  {
   console.log("hii rajesh4")
   try {
     const {data} = await api.post('/api/v1/users/logout');
@@ -37,6 +38,7 @@ async function logoutUser(navigate)  {
     setUser(null)
     navigate('/login')
   } catch (error) {
+    console.log("got the erreo", error)
     toast.error("Somthing went wrong2")
   }
   

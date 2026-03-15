@@ -4,7 +4,7 @@ import path from "path";
 // use memory storage so that we can pipe directly to Cloudinary
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, "../public/temp");
+    cb(null, "./public/temp");
   },
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname);

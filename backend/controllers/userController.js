@@ -85,10 +85,10 @@ export const registerUser = trycatch(async (req, res) => {
 
   try {
     await sendMail({
-    email,
-    subject,
-    html,
-  });
+      email,
+      subject,
+      html,
+    });
   } catch (error) {
     console.error("Error sending verification email:", error);
   }
@@ -634,4 +634,63 @@ export const checkReferrer = trycatch(async (req, res) => {
     name: referrer.name,
     mobile: referrer.mobile,
   });
+});
+
+export const forgotPassword = trycatch(async (req, res) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ message: "Email is required" });
+  }
+
+  const user = await prisma.user.findUnique({ where: { email } });
+
+  if (!user) {
+    return res
+      .status(200)
+      .json({ message: "If your email is registered, an OTP has been sent." });
+  }
+
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  const otpKey = `forgot:${email}`;
+
+  await redisClient.set(otpKey, otp, { EX: 300 }); // 5 minutes
+
+  await sendMail({
+    email,
+    subject: "Password Reset OTP",
+    html: getOtpHtml({ otp }),
+  });
+
+  res
+    .status(200)
+    .json({ message: "OTP sent to your email. Valid for 5 minutes." });
+});
+
+export const resetPassword = trycatch(async (req, res) => {
+  const { email, otp, newPassword } = req.body;
+
+  if (!email || !otp || !newPassword) {
+    return res
+      .status(400)
+      .json({ message: "Email, OTP, and new password are required" });
+  }
+
+  const otpKey = `forgot:${email}`;
+  const storedOtp = await redisClient.get(otpKey);
+
+  if (!storedOtp || storedOtp !== otp) {
+    return res.status(400).json({ message: "Invalid or expired OTP" });
+  }
+
+  const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+  await prisma.user.update({
+    where: { email },
+    data: { password: hashedPassword },
+  });
+
+  await redisClient.del(otpKey);
+
+  res.status(200).json({ message: "Password reset successfully" });
 });
