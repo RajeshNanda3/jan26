@@ -18,6 +18,7 @@ const CustomerHero = () => {
       setLoading(true);
       const { data } = await api.get("/api/v1/users/vendors");
       setVendors(data.vendors || []);
+      // console.log(vendor.vendorProfile.store_name)
     } catch (err) {
       setError(err.message || "Failed to fetch vendors");
       console.error(err);
@@ -76,9 +77,9 @@ const CustomerHero = () => {
                     <span className="font-medium">Phone:</span> {vendor.mobile}
                   </p>
                   <p>
-                    <span className="font-medium">Points Available:</span>{" "}
+                    <span className="font-medium">Store Name:</span>{" "}
                     <span className="text-indigo-600 font-bold">
-                      {vendor.points}
+                      {vendor.vendorProfile?.store_name || "N/A"}
                     </span>
                   </p>
                   <p className="text-xs text-gray-500">

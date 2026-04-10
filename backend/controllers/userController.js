@@ -346,7 +346,21 @@ export const verifyOtp = trycatch(async (req, res) => {
 
 export const myProfile = trycatch(async (req, res) => {
   const user = req.user;
-  // console.log(user);
+
+  // Regenerate CSRF token for authenticated session
+  const { generateCSRFToken } = await import("../config/csrfMiddleware.js");
+  await generateCSRFToken(user.id, res);
+
+  const cacheKey = `profile:${user.id}`;
+
+  // Try to get from cache first
+  const cachedUser = await redisClient.get(cacheKey);
+  if (cachedUser) {
+    const userData = JSON.parse(cachedUser);
+    return res.json({ user: userData });
+  }
+
+  // If not in cache, fetch from database
   const freshUser = await prisma.user.findUnique({
     where: { id: user.id },
     select: {
@@ -360,6 +374,9 @@ export const myProfile = trycatch(async (req, res) => {
       updated_at: true,
     },
   });
+
+  // Store in cache for future requests (e.g., 10 minutes)
+  await redisClient.set(cacheKey, JSON.stringify(freshUser), { EX: 600 });
 
   res.json({ user: freshUser });
 });
@@ -508,6 +525,8 @@ export const refreshToken = trycatch(async (req, res) => {
   }
 
   generateAccessToken(decode.id, res);
+  const { generateCSRFToken } = await import("../config/csrfMiddleware.js");
+  await generateCSRFToken(decode.id, res);
   res.status(200).json({ message: "Access token refreshed" });
 });
 
@@ -558,8 +577,18 @@ export const getAllVendors = trycatch(async (req, res) => {
       name: true,
       email: true,
       mobile: true,
-      points: true,
+      // points: true,
       created_at: true,
+      vendorProfile: {
+        select: {
+          store_name: true,
+          address_at: true,
+          address_po: true,
+          address_market: true,
+          address_dist: true,
+          address_pin: true,
+        },
+      },
     },
   });
   res.status(200).json({

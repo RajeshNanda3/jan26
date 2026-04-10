@@ -9,7 +9,7 @@ export const generateToken = async (id, res) => {
       throw new Error("User id is required to generate tokens");
     }
     console.log({ id });
-    // ...existing code...
+    
   } catch (err) {
     console.error("Error generating tokens:", err);
     throw err;
@@ -17,7 +17,7 @@ export const generateToken = async (id, res) => {
   try {
     console.log({ id });
     const accessToken = jwt.sign({ id }, process.env.JWT_SECRET, {
-      expiresIn: "15m",
+      expiresIn: "1m",
     });
 
     const refreshToken = jwt.sign({ id }, process.env.REFRESH_SECRET, {
@@ -25,13 +25,13 @@ export const generateToken = async (id, res) => {
     });
     // console.log(accessToken, "and", refreshToken);
     const refreshTokenKey = `refresh_token:${id}`;
-    // console.log(refreshTokenKey);
+  
     await redisClient.setEx(refreshTokenKey, 604800, refreshToken); // 7 days expiration
     res.cookie("accessToken", accessToken, {
       httpOnly: true,
       secure: true,
       sameSite: "none",
-      maxAge: 15 * 60 * 1000, // 15 minute
+      maxAge: 1 * 60 * 1000, // 1 minute
     });
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
@@ -42,7 +42,7 @@ export const generateToken = async (id, res) => {
 
     const csrfToken = await generateCSRFToken(id, res);
 
-    // console.log(accessToken, "and", refreshToken);
+    
     return { accessToken, refreshToken, 
       csrfToken 
     };
@@ -71,13 +71,13 @@ export const verifyRefreshToken = async (refreshToken) => {
 
 export const generateAccessToken = (id, res) => {
   const accessToken = jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: "15m",
+    expiresIn: "1m",
   });
   res.cookie("accessToken", accessToken, {
     httpOnly: true,
     secure: true,
     sameSite: "none",
-    maxAge: 15 * 60 * 1000, // 15 minute
+    maxAge: 1 * 60 * 1000, // 1 minute
   });
   return accessToken;
 };
