@@ -19,6 +19,8 @@ import {
   getAllCustomers,
   updateProfile,
   checkReferrer,
+  forgotPassword,
+  resetPassword,
 } from "../controllers/userController.js";
 import { is } from "zod/v4/locales";
 import { authorizedAdmin, isAuth } from "../middlewares/isAuth.js";
@@ -41,10 +43,12 @@ router.post("/profile", isAuth, upload.single("avatar"), upsertProfile);
 router.get("/vendors", getAllVendors);
 router.get("/customers", getAllCustomers);
 router.post("/refresh", refreshToken);
-router.post("/logout", isAuth, verifyCSRFToken, logoutUser);
+router.post("/logout", isAuth,  logoutUser);
 router.post("/refresh-csrf", isAuth, refreshCSRF);
 // router.get('/profile/:userId', getUserProfile);
 
 // router.get('/admin', isAuth, authorizedAdmin, adminController)
+router.post("/forgot-password", forgotPassword);
+router.post("/reset-password", resetPassword);
 
 export default router;

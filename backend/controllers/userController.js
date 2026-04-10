@@ -18,6 +18,8 @@ import {
   verifyRefreshToken,
   revokeRefreshToken,
 } from "../config/generateToken.js";
+import { generateCSRFToken, revokeCSRFTOKEN } from "../config/csrfMiddleware.js";
+
 
 export const registerUser = trycatch(async (req, res) => {
   const sanitizedBody = sanitize(req.body);
@@ -85,10 +87,10 @@ export const registerUser = trycatch(async (req, res) => {
 
   try {
     await sendMail({
-    email,
-    subject,
-    html,
-  });
+      email,
+      subject,
+      html,
+    });
   } catch (error) {
     console.error("Error sending verification email:", error);
   }
@@ -346,7 +348,21 @@ export const verifyOtp = trycatch(async (req, res) => {
 
 export const myProfile = trycatch(async (req, res) => {
   const user = req.user;
-  // console.log(user);
+
+  // Regenerate CSRF token for authenticated session
+  const { generateCSRFToken } = await import("../config/csrfMiddleware.js");
+  await generateCSRFToken(user.id, res);
+
+  const cacheKey = `profile:${user.id}`;
+
+  // Try to get from cache first
+  const cachedUser = await redisClient.get(cacheKey);
+  if (cachedUser) {
+    const userData = JSON.parse(cachedUser);
+    return res.json({ user: userData });
+  }
+
+  // If not in cache, fetch from database
   const freshUser = await prisma.user.findUnique({
     where: { id: user.id },
     select: {
@@ -360,6 +376,9 @@ export const myProfile = trycatch(async (req, res) => {
       updated_at: true,
     },
   });
+
+  // Store in cache for future requests (e.g., 10 minutes)
+  await redisClient.set(cacheKey, JSON.stringify(freshUser), { EX: 600 });
 
   res.json({ user: freshUser });
 });
@@ -508,6 +527,8 @@ export const refreshToken = trycatch(async (req, res) => {
   }
 
   generateAccessToken(decode.id, res);
+  const { generateCSRFToken } = await import("../config/csrfMiddleware.js");
+  await generateCSRFToken(decode.id, res);
   res.status(200).json({ message: "Access token refreshed" });
 });
 
@@ -558,8 +579,18 @@ export const getAllVendors = trycatch(async (req, res) => {
       name: true,
       email: true,
       mobile: true,
-      points: true,
+      // points: true,
       created_at: true,
+      vendorProfile: {
+        select: {
+          store_name: true,
+          address_at: true,
+          address_po: true,
+          address_market: true,
+          address_dist: true,
+          address_pin: true,
+        },
+      },
     },
   });
   res.status(200).json({
@@ -634,4 +665,63 @@ export const checkReferrer = trycatch(async (req, res) => {
     name: referrer.name,
     mobile: referrer.mobile,
   });
+});
+
+export const forgotPassword = trycatch(async (req, res) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ message: "Email is required" });
+  }
+
+  const user = await prisma.user.findUnique({ where: { email } });
+
+  if (!user) {
+    return res
+      .status(200)
+      .json({ message: "If your email is registered, an OTP has been sent." });
+  }
+
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  const otpKey = `forgot:${email}`;
+
+  await redisClient.set(otpKey, otp, { EX: 300 }); // 5 minutes
+
+  await sendMail({
+    email,
+    subject: "Password Reset OTP",
+    html: getOtpHtml({ otp }),
+  });
+
+  res
+    .status(200)
+    .json({ message: "OTP sent to your email. Valid for 5 minutes." });
+});
+
+export const resetPassword = trycatch(async (req, res) => {
+  const { email, otp, newPassword } = req.body;
+
+  if (!email || !otp || !newPassword) {
+    return res
+      .status(400)
+      .json({ message: "Email, OTP, and new password are required" });
+  }
+
+  const otpKey = `forgot:${email}`;
+  const storedOtp = await redisClient.get(otpKey);
+
+  if (!storedOtp || storedOtp !== otp) {
+    return res.status(400).json({ message: "Invalid or expired OTP" });
+  }
+
+  const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+  await prisma.user.update({
+    where: { email },
+    data: { password: hashedPassword },
+  });
+
+  await redisClient.del(otpKey);
+
+  res.status(200).json({ message: "Password reset successfully" });
 });
