@@ -18,6 +18,8 @@ import {
   verifyRefreshToken,
   revokeRefreshToken,
 } from "../config/generateToken.js";
+import { generateCSRFToken, revokeCSRFTOKEN } from "../config/csrfMiddleware.js";
+
 
 export const registerUser = trycatch(async (req, res) => {
   const sanitizedBody = sanitize(req.body);
