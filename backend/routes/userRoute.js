@@ -43,7 +43,7 @@ router.post("/profile", isAuth, upload.single("avatar"), upsertProfile);
 router.get("/vendors", getAllVendors);
 router.get("/customers", getAllCustomers);
 router.post("/refresh", refreshToken);
-router.post("/logout", isAuth, verifyCSRFToken, logoutUser);
+router.post("/logout", isAuth,  logoutUser);
 router.post("/refresh-csrf", isAuth, refreshCSRF);
 // router.get('/profile/:userId', getUserProfile);
 
